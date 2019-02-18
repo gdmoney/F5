@@ -1,0 +1,88 @@
+Shell
+=====
+- Linux shell
+
+tmsh ...						run TMSH commands
+
+cat /config/bigip.conf					show ltm running config
+
+cat /config/bigip.conf | grep -i "string_of_interest"	find a particular string in the config
+
+grep "string_of_interest" /var/log/ltm			find a particular string in the log
+
+tail -f /var/log/ltm					show active log
+
+eud_info						check if EUD software is installed
+
+df -h							view disk space usage
+
+bigstart status						show status of a service
+bigstart restart					restart services
+bigstart stop						stop all TMM instances
+
+reboot
+
+
+
+TMSH
+====
+- contextual menu CLI
+
+- config files are saved in				/config
+- ucs files are saved in    				/var/local/ucs
+
+
+create ltm ...						create a new object
+modify ltm ...						modify an existing object
+delete ltm ...						delete an object
+
+list ltm node						show nodes
+list ltm pool members					show pool members
+list ltm pool						show pools
+list ltm monitor					show monitors
+list ltm virtual					show virtual servers
+list ltm persistence					show persistence profiles
+
+show ltm ...						show statistics
+show ltm persistence persist-records all-properties	show persistence records
+
+
+show net interface					show network interface stats
+show net route						show the routing table
+show net arp						show the ARP table
+
+list net self						show self-IPs
+list net self-allow					show protocols allowed to access self-IPs
+list net vlan						show VLANs
+list net trunk						show LAGs
+
+
+show sys cpu/failover/hardware/license/traffic/ver	show various system parameters
+show sys conn cs-client-addr x.x.x.x			show a client's current active connection(s)
+
+list sys dns/ntp/provision/snmp/syslog			show various system config elements
+
+reset-stats interface
+reset-stats ltm pool POOL_NAME				reset statistics
+reset-stats ltm virtual
+
+
+show cm traffic-group					show per traffic-group status
+show cm failover-status					show failover status
+run sys failover standby				failover
+
+
+save sys config						save running config
+load sys config	[default]				load a config file [restore default settings]
+
+list sys ucs						show existing UCS files in /var/local/ucs
+save sys ucs FILENAME.ucs				archive the config (System > Archives > Create)
+load sys ucs FILENAME.ucs [no-license]			load archived config
+
+
+run util qkview						generate a QKView diagnostics file for support or iHealth
+
+
+restart sys service all					restart services
+reboot							reboot the system
+shutdown						shutdown the system

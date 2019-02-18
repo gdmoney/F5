@@ -1,0 +1,280 @@
+Defaults
+========
+19,200 | 192.168.1.245
+CLI: root/default
+GUI: admin/admin
+
+
+
+Initial Config
+==============
+1. Mgmt port
+2. License				obtain a reg key, obtain a dossier, active license @ activate.f5.com
+3. Provision				allocate resources to licensed modules (Nominal*, Normal, Dedicated)
+4. Install device cert			self-signed or CA signed, must be valid		
+5. Config platform			hostname, time, admin users
+6. Config network and HA		interfaces, VLANs, Self-IPs
+
+
+
+System
+======
+- TMM					Traffic Mgmt Microkernel (Data Plane)
+- TMOS					Traffic Management OS
+- Linux shell				advanced CLI shell |     ~ #
+- tmsh (TM shell)			CLI shell          | (tmos)#
+
+- MGMT interface			processes only administrative traffic
+- TMM switch interface			processes both application and administrative traffic
+
+- Common partition objects are accessible by all users
+
+
+
+Logging & Config Files
+======================
+- recommended to use HSL and store logs on a pool of remote servers
+- types of logging events:
+  - System				based on Linux events, not specific to BIG-IP	    /var/log/messages
+  - Packet filter			result from packet filters and packet-filter rules  /var/log/pktfilter
+  - Local traffic			LTM system events 				    /var/log/ltm
+  - Audit				logs resulting from config changes; optional 	    /var/log/audit
+
+/var/log/...				logs directory (ltm, gtm, tmm, audit, user, snmpd)
+/var/core				contains contents of the system memory at the time a crash occurred
+/var/tmp/HOSTNAME.qkview		show tech equivalent and for use on ihealth.f5.com
+/shared/log/eud.log			EUD report log; used by support
+
+/config/bigip.conf			all configuration objects for managing local application traffic
+/config/bigip_base.conf			network components; mgmt int (not sync'd)
+/config/bigip_user.conf			user accounts and passwords
+/config/bigip.license			license info	
+/config/bigip_script.conf		iApps, iCall templates and scripts
+/config/profile_base.conf		default profiles
+
+/var/local/ucs				compressed config archive (User Configuration Set)
+
+/shared/tmp				should be used for storing UCS archives, QKView files, tcpdump files
+
+
+
+TCP/IP
+======
+- full proxy				intermediates connectivity between clients and servers
+- eliminates the need for clients and servers to negotiate the lowest common denominator for communications
+- improves performance while masking inefficiencies in the network
+- TCP Express				F5s optimized TCP/IP stack
+  - maintains separate MSS for clients and servers
+  - TCP Selective ACKs or TCP Timestamps
+  - automatically optimizes TCP window sizes and TCP congestion information for clients and servers
+
+
+
+Objects
+=======
+- Nodes					server's IP address
+- Pool Member				IP address:port #
+  - disabled				processes established and persistent connections
+  - offline				processes established connections
+  - down				processes nothing
+- Pools					group of pool members
+- Virtual Servers			client traffic listener
+- Profiles				modify traffic behavior
+- iRules
+
+
+
+Virtual Server
+==============
+- traffic management object represented by a VIP and a service
+- requires a TCP or UDP profile, L7 profiles are optional
+- Connection Mirroring 			replicates connection info to the standby unit; disabled by default
+					provides higher reliability but may degrade performance
+  					useful for long-term connections like FTP, Telnet; not for HTTP or UDP
+
+- types:				Standard *, Forwarding, Performance, Stateless, Reject, DHCP, Internal
+
+
+
+Monitor
+=======
+- checks the status of a particular protocol, service, or application
+- can monitor pool/pool member/node health or performance
+- address check				simple up/down verification (ICMP, TCP Echo)
+- service check				L4 port monitor
+- content check				issues a request and compares response with expected content (HTTP/S)
+- application check			interacts with application on multiple levels (FTP)
+- path check				determines if traffic can flow thru a device to an endpoint
+- external				monitor services using another application
+- passive (Inband)			checks the health of a pool member based on a specified # of connection attempts
+
+
+
+Profiles
+========
+- configuration tools to modify and control traffic behavior
+- define capabilities and actions for the virtual server
+- tells a virtual server how to process packets it receives based on the profile's parameters
+- TCP is the default VS profile
+- HTTP profile places the LTM in full L7 inspection mode, which may be unnecessary with simple virtual servers
+
+- types:				
+  - Services				layer 7 oriented; support special features for applications
+  - Persistence				session oriented; methods to treat multiple TCP connections as one
+  - Protocol				layer 4 oriented; parameters concerning timeouts & connection mgmt
+  - SSL					support decryption on the client side and encryption on the server side
+  - Authentication			methods for validating clients wishing to gain access to pool members
+  - OneConnect				reduces TCP concurrent connections to servers by reusing existing ones
+  - Analytics				logs and analyzes web application performance
+
+- TCP + HTTP				full advantage of L4-7 features; CPU and memory intensive
+- Fast HTTP				faster than HTTP profile under optimal network conditions; limited features
+- Fast L4				accelerates packet processing; limited so socket level decisions
+- HTTP Compression			uses either gzip or deflate compression methods
+- Web Acceleration			caching - LTM stores HTTP objects in memory to reduce load on back-end servers
+					3 types: webacceleration, optimized-acceleration, optimized-caching
+					useful for: high-demand objects, static content, content compression
+
+
+
+SSL Process
+===========
+- in a TLS handshake, client and server exchange several messages that result in an encrypted channel for secure communication
+- client always authenticates the server's identity; the server is not required to authenticate the client's identity
+- server shares its certificate including it's public key with the client
+- the client sends a random string of date to the server encrypted with the server's public key
+- client and server independently calculate the symmetric key that will be used for the duration of the TLS session
+
+- certificate verification process checks: 
+  - Digital Signature			clients signs a handshake message using it's private key
+					server validates the message digest of the DS using the client's public key
+  - Certificat Chain			server maintains a list of trusted CAs which determines which certs it will accept
+					server will use a CA's public key to validate the CA's digital signature on a cert	
+  - Expiration Date & Validity Period	server compares the current date to the validity period listed in the cert			
+  - Cert Revocation Status		server compares the client cert to the list of revoked certs on the system
+
+
+
+Persistence Profiles
+====================
+- important that the user continues to be connected the same application instance
+- persistence records are stored in the persistence table (except for cookie persistence)
+- types:
+  - source address *			based on the source IP addr
+  - cookie *				based on the LTM adding an HTTP cookie header
+  - destination address affinity	based on the destination IP address
+  - SSL					based on the SSL session ID
+  - SIP					based on call-ID
+  - universal *				based on custom defined persistence criteria
+
+
+
+SNAT
+====
+- changes the source IP address so that the server's response goes back thru the LTM and not the default gateway
+- Auto Map uses the self floating IP address by default
+- unlike NATs, connections can not be initiated to a SNAT address > more secure
+- each SNAT IP address is limited to 65535 connections
+- Auto Map				addresses changed to floating Self IP address(es) on egress VLANs
+- SNAT pool				addresses changed to a pool IP addresses on egress VLANs
+					can contain addresses from multiple egress networks
+
+
+
+HA
+==
+- CMI					Centralized Management Infrastructure (formerly DSC)
+- Active-Active or Active-Standby	up to 8 devices in a Device Group
+- Device Trust is based on certificates
+- 2 types of Device Groups:		Sync-Failover* and Sync-Only
+- Traffic Group				collection of configuration objects monitored for failover; active on only one device
+- use a dedicated failover VLAN
+- network failover is recommended over failover cable
+- for Active-Standby use a failover cable in tandem with network failover
+- floating self-IPs are hosted by the active device
+- MAC masquerading is recommended
+- HA setup prerequisites:		mgmt int's config'd, same modules licenses/provisioned, valid certs, FQDN, 
+					clocks sync'd, VLANs/Self-IPs config'd, admin user/pswd, backups
+
+
+
+Load Balancing Algorithms
+========================
+- Static:				Round Robin *, Ratio (member or node)
+- Dynamic:				Least Connections *, Weighted LC, Fastest, Observed, Least Sessions
+- Priority Group			lower priority group is idle until higher priority group fails
+
+
+
+Local Traffic Policies
+======================
+- another mechanism for customizing application delivery thru the LTM
+- similar to iRules but not as computationally expensive
+- usage guideline			Profiles > Local Traffic Policy > iRules
+- recommened to use Profiles and Local Traffic Policies over iRules
+
+
+
+iRules
+======
+- scripting language			Tcl based, event-driven customized traffic manipulation
+- trading functionality for performance, use only when you have to
+- otherwise use Profiles and Local Traffic Policies
+- extend BIG-IP feature set:		inspect, analyze, modity, route, redirect, discard, manipulate, replay
+- iFiles				store data/content files and external class-lists for use by iRules
+- iStats				iRules variables accessible in tmsh. Primary vehicle for info sharing b/w control & data planes
+
+- Operators:				== , > , < , starts_with , contains , ends_with
+- Functions:				findstr , getfield , substr
+- Statements:				if , switch , log , pool
+- Commands:				HTTP::uri , HTTP::header , AES::encrypt , SIP::call_id
+
+Syntax:
+ - event declaration, event name	when CLIENT_ACCEPTED
+ - Conditiional Logic statement		   if IP_addr starts_with 10.x.x.x
+					         pool TEN_POOL		(commands when condition true)
+					      else
+						 pool CUSTOMER_POOL	(commands when condition true)
+
+
+
+End User Diagnostics
+====================
+- set of hardware diagnostic tests; requires a console connection
+- recommended to download and install the latest version of EUD for your before running system diagnostics
+- do not run on a production system; prevents traffic processing
+- usually run with F5 support
+- can be run by booting from ISO on a USB drive or disk or Indexed Mesh (IM) file from BIG-IP or a USB drive
+- tests: system, sensors, SFPs, I2C, PCIe, ECC, internal packet path, SSL, compression, SMART, RAM, PS, fan, FIPS, LED, LCD
+
+
+
+BIG-IQ
+======
+- centralized management & monitoring of up to 200 devices (LTM, ASM, AFM, APM, FPS)
+- objects can be configured once and pushed out to many BIG-IPs
+- 2 interfaces: Configuration and Deployment
+  - Configuration interface has 2 interactive modes: On BIG-IQ and On BIG-IP
+- evaluates current and saved BIG-IP state before deploying config changes (diff)
+
+
+
+iHealth
+=======
+- online diagnostic site/tool for proactive maintenance and troubleshooting
+- upload QKView files from both devices in an HA pair
+- analyzes uploaded QKView files for HW/SW issues and vulnerabilities and generates reports
+- Menu: Status, Config Explorer, Commands, Graphs, Diagnostics, Upgrade Advisor, Files, iApps
+- can compare before/after QKView files to identify changes
+
+
+
+Analytics (AVR)
+===============
+- BIG-IP module for analyzing web application performance
+- Metrics: 				Server Latency, Page Load Time, Thruput, User Sessions
+- Entities:				URLs, Countries, Client IP Addresses, Response Codes, User Agents, Methods
+- for apps, virtual servers, pool members, URLs
+- also provides remote logging and notification capabilities
+- create an Analytics profile with Virtual Servers or with an iApps application
+- virtual server must have an HTTP profile applied

@@ -1,0 +1,22 @@
+Notes
+=====
+Changing the BIG-IP host name does not update the device name when the device is a member of a Device Service Clustering (DSC) device group.
+
+
+
+Device Name
+===========
+Device Management > Devices > DEVICE > Change Device Name
+
+
+
+Hostname
+========
+System > Platform > General Properties > Host Name
+
+
+
+Links
+=====
+https://support.f5.com/csp/article/K15700
+https://support.f5.com/csp/article/K26057357
