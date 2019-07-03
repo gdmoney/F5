@@ -1,0 +1,20 @@
+Slow Ramp Time (pool)
+==============
+ - specifies the duration during which the system sends less traffic to a newly-enabled pool member
+ - the amount of traffic is based on the ratio of how long the pool member has been available compared to the slow ramp time, in seconds
+ - once the pool member has been online for a time greater than the slow ramp time, the pool member receives a full proportion of the incoming traffic
+ - slow ramp time is particularly useful for the least connections load balancing mode
+
+
+
+Action on Service Down (pool)
+======================
+ - specifies how the system should respond when the target pool member becomes unavailable
+ - the default is None, meaning that the system takes no action to manage existing connections when a pool member becomes unavailable
+
+
+
+Manual Resume (monitor)
+=============
+ - displays whether the system automatically changes the status of a resource to Enabled at the next successful monitor check
+ - Iif you set this option to Yes, you must manually re-enable the resource before the system can use it for load balancing connections
